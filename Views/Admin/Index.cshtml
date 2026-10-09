@@ -1,0 +1,1121 @@
+﻿@model MoneyTracker.ViewModels.AdminDashboardViewModel
+
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Trang chủ Admin";
+
+    var userChartLabels =
+        JsonSerializer.Serialize(Model.MonthLabels);
+
+    var userChartValues =
+        JsonSerializer.Serialize(Model.NewUserValues);
+
+    var transactionChartValues =
+        JsonSerializer.Serialize(Model.TransactionValues);
+
+    var totalAccounts =
+        Model.ActiveUsers + Model.LockedUsers;
+
+    var activePercent =
+        totalAccounts > 0
+            ? Math.Round(
+                Model.ActiveUsers * 100.0 / totalAccounts,
+                1)
+            : 0;
+}
+
+
+<!-- ================================================== -->
+<!-- HEADER -->
+<!-- ================================================== -->
+
+<div class="admin-hero mb-4">
+
+    <div>
+        <div class="admin-eyebrow">
+            MONEYTRACKER CONTROL CENTER
+        </div>
+
+        <h2 class="fw-bold mb-2">
+            Trang chủ Admin
+        </h2>
+
+        <p class="text-muted mb-0">
+            Theo dõi hoạt động và quản lý hệ thống MoneyTracker.
+        </p>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+
+        <a asp-controller="Admin"
+           asp-action="Users"
+           class="btn btn-primary">
+
+            <i class="fa-solid fa-users me-2"></i>
+            Người dùng
+        </a>
+
+        <a asp-controller="AdminCategories"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+
+            <i class="fa-solid fa-layer-group me-2"></i>
+            Danh mục
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- ================================================== -->
+<!-- KPI -->
+<!-- ================================================== -->
+
+<div class="row g-3 mb-4">
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="admin-stat-card">
+
+            <div class="admin-stat-top">
+
+                <div class="admin-stat-icon icon-users">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+
+                <span class="admin-stat-badge">
+                    +@Model.NewUsersThisMonth tháng này
+                </span>
+
+            </div>
+
+            <div class="admin-stat-label">
+                Tổng người dùng
+            </div>
+
+            <div class="admin-stat-value">
+                @Model.TotalUsers
+            </div>
+
+            <div class="admin-stat-footer">
+                Tất cả tài khoản trong hệ thống
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="admin-stat-card">
+
+            <div class="admin-stat-top">
+
+                <div class="admin-stat-icon icon-active">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+
+                <span class="admin-stat-badge admin-stat-success">
+                    @activePercent%
+                </span>
+
+            </div>
+
+            <div class="admin-stat-label">
+                Tài khoản hoạt động
+            </div>
+
+            <div class="admin-stat-value">
+                @Model.ActiveUsers
+            </div>
+
+            <div class="admin-stat-footer">
+                @Model.LockedUsers tài khoản đang bị khóa
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="admin-stat-card">
+
+            <div class="admin-stat-top">
+
+                <div class="admin-stat-icon icon-transactions">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </div>
+
+            </div>
+
+            <div class="admin-stat-label">
+                Giao dịch hệ thống
+            </div>
+
+            <div class="admin-stat-value">
+                @Model.TotalTransactions
+            </div>
+
+            <div class="admin-stat-footer">
+                Chỉ hiển thị số liệu tổng hợp
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="admin-stat-card">
+
+            <div class="admin-stat-top">
+
+                <div class="admin-stat-icon icon-category">
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+
+            </div>
+
+            <div class="admin-stat-label">
+                Danh mục
+            </div>
+
+            <div class="admin-stat-value">
+                @Model.TotalCategories
+            </div>
+
+            <div class="admin-stat-footer">
+                @Model.TotalSpendingPlans ngân sách đang được tạo
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================================================== -->
+<!-- CHART -->
+<!-- ================================================== -->
+
+<div class="row g-4 mb-4">
+
+    <div class="col-xl-8">
+
+        <div class="admin-panel h-100">
+
+            <div class="admin-panel-header">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Hoạt động hệ thống
+                    </h5>
+
+                    <div class="text-muted small">
+                        6 tháng gần nhất
+                    </div>
+                </div>
+
+                <div class="chart-legend-custom">
+
+                    <span>
+                        <i class="legend-dot legend-user"></i>
+                        User mới
+                    </span>
+
+                    <span>
+                        <i class="legend-dot legend-transaction"></i>
+                        Giao dịch
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="admin-chart-container">
+                <canvas id="systemActivityChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TRẠNG THÁI HỆ THỐNG -->
+
+    <div class="col-xl-4">
+
+        <div class="admin-panel h-100">
+
+            <div class="admin-panel-header">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Trạng thái tài khoản
+                    </h5>
+
+                    <div class="text-muted small">
+                        Phân bố hiện tại
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="account-status-wrapper">
+
+                <div class="status-circle">
+
+                    <div>
+                        <strong>
+                            @activePercent%
+                        </strong>
+
+                        <span>
+                            Hoạt động
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="status-list">
+
+                    <div class="status-item">
+
+                        <div>
+                            <span class="status-dot status-active"></span>
+                            Đang hoạt động
+                        </div>
+
+                        <strong>
+                            @Model.ActiveUsers
+                        </strong>
+
+                    </div>
+
+
+                    <div class="status-item">
+
+                        <div>
+                            <span class="status-dot status-locked"></span>
+                            Bị khóa
+                        </div>
+
+                        <strong>
+                            @Model.LockedUsers
+                        </strong>
+
+                    </div>
+
+
+                    <div class="status-item">
+
+                        <div>
+                            <span class="status-dot status-admin"></span>
+                            Admin
+                        </div>
+
+                        <strong>
+                            @Model.AdminCount
+                        </strong>
+
+                    </div>
+
+
+                    <div class="status-item">
+
+                        <div>
+                            <span class="status-dot status-user"></span>
+                            Người dùng
+                        </div>
+
+                        <strong>
+                            @Model.UserCount
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ================================================== -->
+<!-- BOTTOM -->
+<!-- ================================================== -->
+
+<div class="row g-4">
+
+    <!-- USER MỚI -->
+
+    <div class="col-xl-7">
+
+        <div class="admin-panel h-100">
+
+            <div class="admin-panel-header">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Người dùng mới
+                    </h5>
+
+                    <div class="text-muted small">
+                        Các tài khoản đăng ký gần đây
+                    </div>
+                </div>
+
+                <a asp-controller="Admin"
+                   asp-action="Users"
+                   class="btn btn-sm btn-outline-primary">
+
+                    Xem tất cả
+                    <i class="fa-solid fa-arrow-right ms-1"></i>
+
+                </a>
+
+            </div>
+
+
+            @if (!Model.RecentUsers.Any())
+            {
+                <div class="text-center text-muted py-5">
+
+                    <i class="fa-solid fa-users fs-2 mb-3"></i>
+
+                    <div>
+                        Chưa có người dùng.
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div class="recent-user-list">
+
+                    @foreach (var user in Model.RecentUsers)
+                    {
+                        <div class="recent-user-item">
+
+                            <div class="recent-user-main">
+
+                                @if (!string.IsNullOrWhiteSpace(user.Avatar))
+                                {
+                                    <img src="@user.Avatar"
+                                         class="recent-user-avatar"
+                                         alt="Avatar" />
+                                }
+                                else
+                                {
+                                    <div class="recent-user-avatar
+                                        recent-user-placeholder">
+
+                                        @(string.IsNullOrWhiteSpace(user.FullName)
+                                            ? "U"
+                                            : user.FullName.Substring(0, 1).ToUpper())
+
+                                    </div>
+                                }
+
+
+                                <div>
+
+                                    <div class="fw-semibold">
+                                        @user.FullName
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        @user.Email
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="text-end">
+
+                                <div class="small fw-semibold">
+                                    @user.CreatedAt.ToString("dd/MM/yyyy")
+                                </div>
+
+                                <div class="text-muted small">
+                                    @user.CreatedAt.ToString("HH:mm")
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- QUICK INFO -->
+
+    <div class="col-xl-5">
+
+        <div class="admin-panel h-100">
+
+            <div class="admin-panel-header">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Tổng quan quản trị
+                    </h5>
+
+                    <div class="text-muted small">
+                        Thống kê nhanh hệ thống
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="quick-stat-grid">
+
+                <div class="quick-stat">
+
+                    <div class="quick-stat-icon">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+
+                    <div>
+                        <span>Danh mục Thu</span>
+
+                        <strong>
+                            @Model.IncomeCategoryCount
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="quick-stat">
+
+                    <div class="quick-stat-icon">
+                        <i class="fa-solid fa-arrow-trend-down"></i>
+                    </div>
+
+                    <div>
+                        <span>Danh mục Chi</span>
+
+                        <strong>
+                            @Model.ExpenseCategoryCount
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="quick-stat">
+
+                    <div class="quick-stat-icon">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+
+                    <div>
+                        <span>Ngân sách</span>
+
+                        <strong>
+                            @Model.TotalSpendingPlans
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div class="quick-stat">
+
+                    <div class="quick-stat-icon">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+
+                    <div>
+                        <span>User mới tháng này</span>
+
+                        <strong>
+                            @Model.NewUsersThisMonth
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="admin-actions mt-4">
+
+                <a asp-controller="Admin"
+                   asp-action="Users"
+                   class="admin-action-link">
+
+                    <div>
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+
+                    <span>
+                        Quản lý người dùng
+                    </span>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+
+                <a asp-controller="AdminCategories"
+                   asp-action="Index"
+                   class="admin-action-link">
+
+                    <div>
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+
+                    <span>
+                        Danh mục hệ thống
+                    </span>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+    .admin-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .admin-eyebrow {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: #2563eb;
+        margin-bottom: 7px;
+    }
+
+    .admin-stat-card {
+        background: #fff;
+        border: 1px solid #edf0f4;
+        border-radius: 18px;
+        padding: 20px;
+        height: 100%;
+        transition: .2s ease;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, .04);
+    }
+
+    .admin-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
+    }
+
+    .admin-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+    .admin-stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .icon-users {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .icon-active {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .icon-transactions {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .icon-category {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+
+    .admin-stat-badge {
+        background: #eff6ff;
+        color: #2563eb;
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .admin-stat-success {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .admin-stat-label {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .admin-stat-value {
+        font-size: 30px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 3px 0;
+    }
+
+    .admin-stat-footer {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .admin-panel {
+        background: #fff;
+        border: 1px solid #edf0f4;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, .04);
+    }
+
+    .admin-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .admin-chart-container {
+        height: 300px;
+        position: relative;
+    }
+
+    .chart-legend-custom {
+        display: flex;
+        gap: 15px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .legend-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+    }
+
+    .legend-user {
+        background: #2563eb;
+    }
+
+    .legend-transaction {
+        background: #f59e0b;
+    }
+
+    .account-status-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .status-circle {
+        width: 155px;
+        height: 155px;
+        border-radius: 50%;
+        background: conic-gradient(
+            #22c55e 0%,
+            #22c55e @($"{activePercent}%"),
+            #e5e7eb @($"{activePercent}%"),
+            #e5e7eb 100%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0 25px;
+        position: relative;
+    }
+
+    .status-circle::after {
+        content: "";
+        width: 112px;
+        height: 112px;
+        background: white;
+        border-radius: 50%;
+        position: absolute;
+    }
+
+    .status-circle > div {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+
+    .status-circle strong {
+        display: block;
+        font-size: 25px;
+        color: #0f172a;
+    }
+
+    .status-circle span {
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .status-list {
+        width: 100%;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 7px;
+    }
+
+    .status-active {
+        background: #22c55e;
+    }
+
+    .status-locked {
+        background: #ef4444;
+    }
+
+    .status-admin {
+        background: #8b5cf6;
+    }
+
+    .status-user {
+        background: #3b82f6;
+    }
+
+    .recent-user-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 13px 0;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 15px;
+    }
+
+    .recent-user-item:last-child {
+        border-bottom: 0;
+    }
+
+    .recent-user-main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .recent-user-avatar {
+        width: 43px;
+        height: 43px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .recent-user-placeholder {
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+
+    .quick-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .quick-stat {
+        padding: 14px;
+        background: #f8fafc;
+        border-radius: 14px;
+        display: flex;
+        gap: 11px;
+        align-items: center;
+    }
+
+    .quick-stat-icon {
+        width: 38px;
+        height: 38px;
+        background: white;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #2563eb;
+    }
+
+    .quick-stat span {
+        display: block;
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .quick-stat strong {
+        font-size: 19px;
+        color: #0f172a;
+    }
+
+    .admin-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .admin-action-link {
+        display: grid;
+        grid-template-columns: 38px 1fr auto;
+        align-items: center;
+        gap: 11px;
+        padding: 11px;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+        color: #334155;
+        text-decoration: none;
+        transition: .2s;
+    }
+
+    .admin-action-link:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+        transform: translateX(2px);
+    }
+
+    .admin-action-link > div {
+        width: 38px;
+        height: 38px;
+        background: #eff6ff;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @@media (max-width: 767px) {
+
+        .quick-stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .chart-legend-custom {
+            display: none;
+        }
+
+        .admin-chart-container {
+            height: 240px;
+        }
+
+    }
+
+</style>
+
+
+@section Scripts
+{
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+
+        const monthLabels =
+            @Html.Raw(userChartLabels);
+
+        const newUserValues =
+            @Html.Raw(userChartValues);
+
+        const transactionValues =
+            @Html.Raw(transactionChartValues);
+
+
+        const activityCanvas =
+            document.getElementById(
+                "systemActivityChart"
+            );
+
+
+        if (activityCanvas) {
+
+            new Chart(
+                activityCanvas,
+                {
+                    type: "line",
+
+                    data: {
+
+                        labels:
+                            monthLabels,
+
+                        datasets: [
+
+                            {
+                                label:
+                                    "Người dùng mới",
+
+                                data:
+                                    newUserValues,
+
+                                borderColor:
+                                    "#2563eb",
+
+                                backgroundColor:
+                                    "rgba(37, 99, 235, 0.08)",
+
+                                borderWidth:
+                                    3,
+
+                                tension:
+                                    0.4,
+
+                                fill:
+                                    true,
+
+                                pointRadius:
+                                    4
+                            },
+
+                            {
+                                label:
+                                    "Giao dịch",
+
+                                data:
+                                    transactionValues,
+
+                                borderColor:
+                                    "#f59e0b",
+
+                                backgroundColor:
+                                    "rgba(245, 158, 11, 0.05)",
+
+                                borderWidth:
+                                    3,
+
+                                tension:
+                                    0.4,
+
+                                fill:
+                                    false,
+
+                                pointRadius:
+                                    4
+                            }
+
+                        ]
+                    },
+
+                    options: {
+
+                        responsive:
+                            true,
+
+                        maintainAspectRatio:
+                            false,
+
+                        interaction: {
+                            mode:
+                                "index",
+
+                            intersect:
+                                false
+                        },
+
+                        plugins: {
+
+                            legend: {
+                                display:
+                                    false
+                            }
+
+                        },
+
+                        scales: {
+
+                            y: {
+                                beginAtZero:
+                                    true,
+
+                                ticks: {
+                                    precision:
+                                        0
+                                },
+
+                                grid: {
+                                    color:
+                                        "rgba(148,163,184,.15)"
+                                }
+                            },
+
+                            x: {
+
+                                grid: {
+                                    display:
+                                        false
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        }
+
+    </script>
+}

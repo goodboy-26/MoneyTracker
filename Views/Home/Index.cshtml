@@ -1,0 +1,1802 @@
+﻿@model MoneyTracker.ViewModels.DashboardViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Trang chủ";
+
+    var progressPercent =
+        Math.Min(Model.SpendingPlanPercent, 100);
+
+    var featuredGoal = Model.FeaturedSavingsGoal;
+
+    decimal savingsPercent = 0;
+    decimal savingsRemaining = 0;
+
+    if (featuredGoal != null && featuredGoal.TargetAmount > 0)
+    {
+        savingsPercent = Math.Min(
+            featuredGoal.CurrentAmount * 100 / featuredGoal.TargetAmount,
+            100);
+
+        savingsRemaining = Math.Max(
+            featuredGoal.TargetAmount - featuredGoal.CurrentAmount,
+            0);
+    }
+
+    var analysis = Model.SpendingAnalysis;
+}
+
+
+<!-- ============================== -->
+<!-- HEADER -->
+<!-- ============================== -->
+
+<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+        <h2 class="fw-bold mb-1">
+            Tổng quan tài chính
+        </h2>
+
+        <p class="text-muted mb-0">
+            Theo dõi ngân sách, chi tiêu thực tế, tiết kiệm và kế hoạch chi tiêu của bạn.
+        </p>
+    </div>
+
+    <div class="d-flex gap-2">
+
+        <a asp-controller="Transactions"
+           asp-action="Create"
+           asp-route-type="Income"
+           class="btn btn-outline-success">
+
+            <i class="fa-solid fa-plus me-1"></i>
+            Thu
+
+        </a>
+
+        <a asp-controller="Transactions"
+           asp-action="Create"
+           asp-route-type="Expense"
+           class="btn btn-outline-danger">
+
+            <i class="fa-solid fa-minus me-1"></i>
+            Chi
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- ============================== -->
+<!-- SUMMARY CARDS -->
+<!-- ============================== -->
+
+<div class="row g-4 mb-4">
+
+    <!-- THU NHẬP -->
+    <div class="col-xl-3 col-md-6">
+        <div class="summary-card">
+
+            <div class="summary-icon income-icon">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+            </div>
+
+            <div>
+                <div class="text-muted mb-1">
+                    Ngân sách tháng này
+                </div>
+
+                <h4 class="fw-bold text-success mb-1">
+                    @Model.TotalIncome.ToString("N0") ₫
+                </h4>
+
+                <div class="small">
+
+                    @if (Model.PreviousMonthIncome <= 0)
+                    {
+                        <span class="text-muted">
+                            Chưa có dữ liệu tháng trước
+                        </span>
+                    }
+                    else if (Model.IncomeChangePercent >= 0)
+                    {
+                        <span class="text-success">
+                            <i class="fa-solid fa-arrow-up me-1"></i>
+                            @Model.IncomeChangePercent.ToString("0.#")%
+                        </span>
+
+                        <span class="text-muted">
+                            so với tháng trước
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="text-danger">
+                            <i class="fa-solid fa-arrow-down me-1"></i>
+                            @Math.Abs(Model.IncomeChangePercent).ToString("0.#")%
+                        </span>
+
+                        <span class="text-muted">
+                            so với tháng trước
+                        </span>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- CHI THỰC TẾ -->
+    <div class="col-xl-3 col-md-6">
+        <div class="summary-card">
+
+            <div class="summary-icon expense-icon">
+                <i class="fa-solid fa-arrow-trend-down"></i>
+            </div>
+
+            <div>
+                <div class="text-muted mb-1">
+                    Chi thực tế tháng này
+                </div>
+
+                <h4 class="fw-bold text-danger mb-1">
+                    @Model.TotalExpense.ToString("N0") ₫
+                </h4>
+
+                <div class="small">
+
+                    @if (Model.PreviousMonthExpense <= 0)
+                    {
+                        <span class="text-muted">
+                            Chưa có dữ liệu tháng trước
+                        </span>
+                    }
+                    else if (Model.ExpenseChangePercent > 0)
+                    {
+                        <span class="text-danger">
+                            <i class="fa-solid fa-arrow-up me-1"></i>
+                            @Model.ExpenseChangePercent.ToString("0.#")%
+                        </span>
+
+                        <span class="text-muted">
+                            so với tháng trước
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="text-success">
+                            <i class="fa-solid fa-arrow-down me-1"></i>
+                            @Math.Abs(Model.ExpenseChangePercent).ToString("0.#")%
+                        </span>
+
+                        <span class="text-muted">
+                            so với tháng trước
+                        </span>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- CHÊNH LỆCH THU CHI -->
+    <div class="col-xl-3 col-md-6">
+        <div class="summary-card">
+
+            <div class="summary-icon balance-icon">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+
+            <div>
+                <div class="text-muted mb-1">
+                    Còn lại
+                </div>
+
+                <h4 class="fw-bold mb-1 @(Model.Balance >= 0 ? "text-primary" : "text-danger")">
+                    @Model.Balance.ToString("N0") ₫
+                </h4>
+
+                <div class="small text-muted">
+                    <i class="fa-solid fa-receipt me-1"></i>
+                    Thu - Chi - Tiết kiệm
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- SAVINGS -->
+    <div class="col-xl-3 col-md-6">
+        <div class="summary-card">
+
+            <div class="summary-icon savings-summary-icon">
+                <i class="fa-solid fa-piggy-bank"></i>
+            </div>
+
+            <div>
+                <div class="text-muted mb-1">
+                    Tiết kiệm tháng này
+                </div>
+
+                <h4 class="fw-bold text-success mb-1">
+                    @Model.MonthlySavings.ToString("N0") ₫
+                </h4>
+
+                <div class="small text-muted">
+                    Đã đưa vào các mục tiêu tiết kiệm
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+</div>
+
+
+<!-- ============================== -->
+<!-- SAVINGS GOAL -->
+<!-- ============================== -->
+
+<div class="dashboard-card savings-dashboard-card mb-4">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+
+        <div class="savings-dashboard-title">
+
+            <div class="savings-dashboard-icon">
+                <i class="fa-solid fa-piggy-bank"></i>
+            </div>
+
+            <div>
+                <h5 class="fw-bold mb-1">
+                    Mục tiêu tiết kiệm
+                </h5>
+
+                <div class="text-muted small">
+                    @Model.CompletedSavingsGoalCount /
+                    @Model.SavingsGoalCount mục tiêu đã hoàn thành
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="d-flex align-items-center gap-2">
+
+            @if (Model.SavingsGoalCount > 0)
+            {
+                <button class="btn btn-sm btn-outline-primary"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#allSavingsGoals"
+                        aria-expanded="false"
+                        aria-controls="allSavingsGoals">
+
+                    <i class="fa-solid fa-chevron-down me-1"></i>
+                    @Model.SavingsGoalCount mục tiêu
+
+                </button>
+            }
+
+            <a asp-controller="SavingsGoals"
+               asp-action="Index"
+               class="btn btn-sm btn-outline-primary">
+
+                Quản lý
+                <i class="fa-solid fa-arrow-right ms-1"></i>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    @if (featuredGoal == null)
+    {
+        <div class="savings-empty-dashboard">
+
+            <div>
+                <strong>
+                    Bạn chưa có mục tiêu tiết kiệm
+                </strong>
+
+                <div class="text-muted small mt-1">
+                    Tạo một mục tiêu để bắt đầu kế hoạch tài chính.
+                </div>
+            </div>
+
+            <a asp-controller="SavingsGoals"
+               asp-action="Create"
+               class="btn btn-primary">
+
+                <i class="fa-solid fa-plus me-1"></i>
+                Tạo mục tiêu
+
+            </a>
+
+        </div>
+    }
+    else
+    {
+        var completed =
+            featuredGoal.CurrentAmount >= featuredGoal.TargetAmount;
+
+        var overdue =
+            !completed &&
+            featuredGoal.TargetDate.HasValue &&
+            featuredGoal.TargetDate.Value.Date < DateTime.Today;
+
+
+        <div class="row align-items-center g-4">
+
+            <div class="col-lg-8">
+
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+
+                    <div>
+
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+
+                            <h4 class="fw-bold mb-0">
+                                @featuredGoal.Name
+                            </h4>
+
+                            @if (completed)
+                            {
+                                <span class="badge text-bg-success rounded-pill">
+                                    <i class="fa-solid fa-trophy me-1"></i>
+                                    Hoàn thành
+                                </span>
+                            }
+                            else if (overdue)
+                            {
+                                <span class="badge text-bg-danger rounded-pill">
+                                    <i class="fa-solid fa-clock me-1"></i>
+                                    Quá hạn
+                                </span>
+                            }
+
+                        </div>
+
+
+                        @if (featuredGoal.TargetDate.HasValue)
+                        {
+                            <div class="text-muted small mt-2">
+
+                                <i class="fa-regular fa-calendar me-1"></i>
+
+                                Hạn
+                                @featuredGoal.TargetDate.Value.ToString("dd/MM/yyyy")
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <div class="savings-dashboard-money mb-2">
+
+                    <strong>
+                        @featuredGoal.CurrentAmount.ToString("N0") ₫
+                    </strong>
+
+                    <span>
+                        / @featuredGoal.TargetAmount.ToString("N0") ₫
+                    </span>
+
+                </div>
+
+
+                <div class="progress savings-dashboard-progress">
+
+                    <div class="progress-bar @(completed ? "bg-success" : overdue ? "bg-danger" : "")"
+                         style="width: @savingsPercent.ToString(
+                                                     "0.##",
+                                                     System.Globalization.CultureInfo.InvariantCulture)%">
+                    </div>
+
+                </div>
+
+
+                <div class="d-flex justify-content-between mt-2">
+
+                    <span class="fw-semibold small">
+                        @savingsPercent.ToString("0.#")%
+                    </span>
+
+                    @if (completed)
+                    {
+                        <span class="text-success fw-semibold small">
+                            Đã đạt mục tiêu 🎉
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="text-muted small">
+                            Còn @savingsRemaining.ToString("N0") ₫
+                        </span>
+                    }
+
+                </div>
+
+            </div>
+
+
+            <div class="col-lg-4">
+
+                <div class="savings-dashboard-action">
+
+                    @if (!completed)
+                    {
+                        <a asp-controller="SavingsGoals"
+                           asp-action="AddAmount"
+                           asp-route-id="@featuredGoal.Id"
+                           class="btn btn-primary w-100 mb-2">
+
+                            <i class="fa-solid fa-plus me-2"></i>
+                            Thêm tiền tiết kiệm
+
+                        </a>
+                    }
+
+                    <a asp-controller="SavingsGoals"
+                       asp-action="Index"
+                       class="btn btn-light w-100">
+
+                        <i class="fa-solid fa-bullseye me-2"></i>
+                        Quản lý mục tiêu
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+
+    @if (Model.SavingsGoals.Any())
+    {
+        <div class="collapse mt-4"
+             id="allSavingsGoals">
+
+            <div class="savings-goal-dropdown">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <strong>
+                        <i class="fa-solid fa-list-check me-2"></i>
+                        Tất cả mục tiêu
+                    </strong>
+
+                    <span class="text-muted small">
+                        @Model.SavingsGoalCount mục tiêu
+                    </span>
+
+                </div>
+
+
+                <div class="savings-goal-scroll">
+
+                    @foreach (var goal in Model.SavingsGoals)
+                    {
+                        var goalPercent =
+                            goal.TargetAmount > 0
+                                ? Math.Min(
+                                    goal.CurrentAmount * 100 / goal.TargetAmount,
+                                    100)
+                                : 0;
+
+                        var goalRemaining =
+                            Math.Max(
+                                goal.TargetAmount - goal.CurrentAmount,
+                                0);
+
+                        var goalCompleted =
+                            goal.CurrentAmount >= goal.TargetAmount;
+
+                        var goalOverdue =
+                            !goalCompleted &&
+                            goal.TargetDate.HasValue &&
+                            goal.TargetDate.Value.Date < DateTime.Today;
+
+
+                        <div class="savings-mini-goal">
+
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+
+                                <div class="flex-grow-1">
+
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+
+                                        <strong class="savings-mini-name">
+                                            @goal.Name
+                                        </strong>
+
+                                        @if (goalCompleted)
+                                        {
+                                            <span class="badge text-bg-success rounded-pill">
+                                                <i class="fa-solid fa-circle-check me-1"></i>
+                                                Hoàn thành
+                                            </span>
+                                        }
+                                        else if (goalOverdue)
+                                        {
+                                            <span class="badge text-bg-danger rounded-pill">
+                                                <i class="fa-solid fa-clock me-1"></i>
+                                                Quá hạn
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-primary-subtle text-primary rounded-pill">
+                                                Đang thực hiện
+                                            </span>
+                                        }
+
+                                    </div>
+
+
+                                    @if (goal.TargetDate.HasValue)
+                                    {
+                                        <div class="text-muted small mt-1">
+
+                                            <i class="fa-regular fa-calendar me-1"></i>
+
+                                            Hạn
+                                            @goal.TargetDate.Value.ToString("dd/MM/yyyy")
+
+                                        </div>
+                                    }
+
+                                </div>
+
+
+                                <div class="d-flex gap-2">
+
+                                    @if (!goalCompleted)
+                                    {
+                                        <a asp-controller="SavingsGoals"
+                                           asp-action="AddAmount"
+                                           asp-route-id="@goal.Id"
+                                           class="btn btn-sm btn-primary"
+                                           title="Thêm tiền">
+
+                                            <i class="fa-solid fa-plus"></i>
+
+                                        </a>
+                                    }
+
+                                    <a asp-controller="SavingsGoals"
+                                       asp-action="Edit"
+                                       asp-route-id="@goal.Id"
+                                       class="btn btn-sm btn-light"
+                                       title="Chỉnh sửa">
+
+                                        <i class="fa-solid fa-pen"></i>
+
+                                    </a>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="d-flex justify-content-between mt-3 mb-2">
+
+                                <span class="small fw-semibold">
+                                    @goal.CurrentAmount.ToString("N0") ₫
+                                </span>
+
+                                <span class="small text-muted">
+                                    @goal.TargetAmount.ToString("N0") ₫
+                                </span>
+
+                            </div>
+
+
+                            <div class="progress savings-mini-progress">
+
+                                <div class="progress-bar @(goalCompleted ? "bg-success" : goalOverdue ? "bg-danger" : "")"
+                                     style="width: @goalPercent.ToString(
+                                                                             "0.##",
+                                                                             System.Globalization.CultureInfo.InvariantCulture)%">
+                                </div>
+
+                            </div>
+
+
+                            <div class="d-flex justify-content-between mt-2">
+
+                                <span class="small fw-semibold">
+                                    @goalPercent.ToString("0.#")%
+                                </span>
+
+                                @if (goalCompleted)
+                                {
+                                    <span class="small fw-semibold text-success">
+                                        <i class="fa-solid fa-circle-check me-1"></i>
+                                        Đã đạt mục tiêu
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="small text-muted">
+                                        Còn @goalRemaining.ToString("N0") ₫
+                                    </span>
+                                }
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+<!-- ============================== -->
+<!-- PHÂN TÍCH CHI TIÊU -->
+<!-- ============================== -->
+
+<div class="dashboard-card spending-analysis-card mb-4">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+
+        <div class="d-flex align-items-center gap-3">
+
+            <div class="analysis-main-icon">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+
+            <div>
+                <h5 class="fw-bold mb-1">
+                    Phân tích chi tiêu
+                </h5>
+
+                <div class="text-muted small">
+                    Tổng quan tài chính tháng
+                    @DateTime.Today.Month/@DateTime.Today.Year
+                </div>
+            </div>
+
+        </div>
+
+        <span class="analysis-badge">
+            <i class="fa-solid fa-chart-line me-1"></i>
+            Phân tích tự động
+        </span>
+
+    </div>
+
+
+    @if (analysis.CurrentMonthExpense <= 0)
+    {
+        <div class="analysis-empty">
+
+            <div class="analysis-empty-icon">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+
+            <div>
+                <strong>
+                    Chưa có dữ liệu chi tiêu
+                </strong>
+
+                <div class="text-muted small mt-1">
+                    Hãy thêm giao dịch chi để hệ thống bắt đầu phân tích.
+                </div>
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <div class="analysis-stat">
+
+                    <div class="analysis-stat-icon">
+                        <i class="fa-solid fa-calendar-day"></i>
+                    </div>
+
+                    <div class="analysis-stat-label">
+                        Trung bình / ngày
+                    </div>
+
+                    <div class="analysis-stat-value">
+                        @analysis.AverageDailyExpense.ToString("N0") ₫
+                    </div>
+
+                    <div class="analysis-stat-note">
+                        Tính đến ngày @analysis.DaysPassed
+                    </div>
+
+                </div>
+            </div>
+
+
+            <div class="col-md-4">
+                <div class="analysis-stat">
+
+                    <div class="analysis-stat-icon">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+
+                    <div class="analysis-stat-label">
+                        Dự kiến cuối tháng
+                    </div>
+
+                    <div class="analysis-stat-value">
+                        @analysis.PredictedMonthExpense.ToString("N0") ₫
+                    </div>
+
+                    <div class="analysis-stat-note">
+                        Theo tốc độ chi hiện tại
+                    </div>
+
+                </div>
+            </div>
+
+
+            <div class="col-md-4">
+                <div class="analysis-stat">
+
+                    <div class="analysis-stat-icon">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+
+                    <div class="analysis-stat-label">
+                        Chi nhiều nhất
+                    </div>
+
+                    <div class="analysis-stat-value analysis-category-name">
+                        @(string.IsNullOrEmpty(analysis.TopCategoryName)
+                            ? "Chưa có"
+                            : analysis.TopCategoryName)
+                    </div>
+
+                    <div class="analysis-stat-note">
+
+                        @if (!string.IsNullOrEmpty(analysis.TopCategoryName))
+                        {
+                            <span>
+                                @analysis.TopCategoryAmount.ToString("N0") ₫
+                                · @analysis.TopCategoryPercent.ToString("N1")%
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="analysis-insights">
+
+            <div class="analysis-insights-title">
+                <i class="fa-regular fa-lightbulb me-2"></i>
+                Nhận xét từ dữ liệu của bạn
+            </div>
+
+            @for (var i = 0; i < analysis.Insights.Count; i++)
+            {
+                <div class="analysis-insight-item">
+
+                    <div class="analysis-insight-number">
+                        @(i + 1)
+                    </div>
+
+                    <div>
+                        @analysis.Insights[i]
+                    </div>
+
+                </div>
+            }
+
+        </div>
+
+
+        @if (analysis.SpendingPlanLimit > 0)
+        {
+            var spendingPlanDisplayPercent =
+                Math.Min(analysis.SpendingPlanPercent, 100);
+
+            <div class="analysis-spendingPlan mt-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+
+                    <div>
+
+                        <strong>
+                            Mức sử dụng ngân sách (theo tổng thu)
+                        </strong>
+
+                        <div class="small text-muted">
+                            @analysis.CurrentMonthExpense.ToString("N0") ₫
+                            /
+                            @analysis.SpendingPlanLimit.ToString("N0") ₫
+                        </div>
+
+                    </div>
+
+                    <strong class="@(analysis.SpendingPlanPercent >= 100
+                                                                ? "text-danger"
+                                                                : analysis.SpendingPlanPercent >= 80
+                                                                    ? "text-warning"
+                                                                    : "text-success")">
+
+                        @analysis.SpendingPlanPercent.ToString("N1")%
+
+                    </strong>
+
+                </div>
+
+
+                <div class="progress"
+                     style="height: 9px;">
+
+                    <div class="progress-bar @(analysis.SpendingPlanPercent >= 100
+                                                                        ? "bg-danger"
+                                                                        : analysis.SpendingPlanPercent >= 80
+                                                                            ? "bg-warning"
+                                                                            : "bg-success")"
+                         style="width: @spendingPlanDisplayPercent.ToString(
+                                                     "0.##",
+                                                     System.Globalization.CultureInfo.InvariantCulture)%">
+                    </div>
+
+                </div>
+
+            </div>
+        }
+    }
+
+</div>
+
+
+<!-- ============================== -->
+<!-- CHARTS -->
+<!-- ============================== -->
+
+<div class="row g-4 mb-4">
+
+    <div class="col-xl-8">
+
+        <div class="dashboard-card h-100">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Thu chi 6 tháng gần đây
+                    </h5>
+
+                    <div class="small text-muted">
+                        So sánh thu nhập và chi tiêu.
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="height:320px;">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-xl-4">
+
+        <div class="dashboard-card h-100">
+
+            <h5 class="fw-bold mb-1">
+                Chi tiêu theo danh mục
+            </h5>
+
+            <p class="small text-muted">
+                Tháng hiện tại
+            </p>
+
+            @if (Model.CategoryExpenseValues.Any())
+            {
+                <div style="height:290px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            }
+            else
+            {
+                <div class="empty-dashboard-state">
+
+                    <i class="fa-solid fa-chart-pie"></i>
+
+                    <p class="mb-0">
+                        Chưa có dữ liệu chi tiêu.
+                    </p>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================== -->
+<!-- GIAO DỊCH + NGÂN SÁCH -->
+<!-- ============================== -->
+
+<div class="row g-4">
+
+    <!-- GIAO DỊCH -->
+    <div class="col-xl-8">
+
+        <div class="dashboard-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Giao dịch gần đây
+                    </h5>
+
+                    <small class="text-muted">
+                        5 giao dịch mới nhất
+                    </small>
+                </div>
+
+                <a asp-controller="Transactions"
+                   asp-action="Index"
+                   class="text-decoration-none">
+
+                    Xem tất cả
+                    <i class="fa-solid fa-arrow-right ms-1"></i>
+
+                </a>
+
+            </div>
+
+
+            @if (!Model.RecentTransactions.Any())
+            {
+                <div class="empty-dashboard-state">
+
+                    <i class="fa-solid fa-receipt"></i>
+
+                    <h6>
+                        Chưa có giao dịch
+                    </h6>
+
+                    <a asp-controller="Transactions"
+                       asp-action="Create"
+                       class="btn btn-sm btn-primary">
+
+                        Thêm giao dịch
+
+                    </a>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table align-middle mb-0">
+
+                        <tbody>
+
+                            @foreach (var item in Model.RecentTransactions)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <strong>
+                                            @item.Title
+                                        </strong>
+
+                                        <div class="small text-muted">
+                                            @item.Category?.Name
+                                        </div>
+
+                                    </td>
+
+                                    <td class="text-muted">
+                                        @item.TransactionDate.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+
+                                    <td class="text-end fw-bold">
+
+                                        @if (item.Type == "Income")
+                                        {
+                                            <span class="text-success">
+                                                +@item.Amount.ToString("N0") ₫
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">
+                                                -@item.Amount.ToString("N0") ₫
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- NGÂN SÁCH -->
+    <div class="col-xl-4">
+
+        <div class="dashboard-card h-100">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        Kế hoạch chi tiêu
+                    </h5>
+
+                    <small class="text-muted">
+                        So sánh kế hoạch với chi thực tế
+                    </small>
+
+                </div>
+
+                <a asp-controller="SpendingPlans"
+                   asp-action="Index"
+                   class="text-decoration-none">
+
+                    Quản lý
+
+                </a>
+
+            </div>
+
+
+            @if (Model.SpendingPlanLimit <= 0)
+            {
+                <div class="empty-dashboard-state">
+
+                    <i class="fa-solid fa-bullseye"></i>
+
+                    <h6>
+                        Chưa có kế hoạch chi tiêu
+                    </h6>
+
+                    <p class="small text-muted">
+                        Hãy tạo kế hoạch cho các danh mục bạn muốn theo dõi.
+                    </p>
+
+                    <a asp-controller="SpendingPlans"
+                       asp-action="Index"
+                       class="btn btn-sm btn-outline-primary">
+
+                        Tạo kế hoạch
+
+                    </a>
+
+                </div>
+            }
+            else
+            {
+                var actualSpendingPlanPercent =
+                    Model.SpendingPlanPercent;
+
+                var barPercent =
+                    Math.Min(actualSpendingPlanPercent, 100);
+
+
+                <div class="mb-3">
+
+                    <div class="d-flex justify-content-between mb-2">
+
+                        <span>
+                            Mức sử dụng
+                        </span>
+
+                        <strong class="@(actualSpendingPlanPercent >= 100
+                                                                        ? "text-danger"
+                                                                        : actualSpendingPlanPercent >= 80
+                                                                            ? "text-warning"
+                                                                            : "text-success")">
+
+                            @actualSpendingPlanPercent.ToString("N1")%
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="progress"
+                         style="height:12px;">
+
+                        <div class="progress-bar @(actualSpendingPlanPercent >= 100
+                                                                                ? "bg-danger"
+                                                                                : actualSpendingPlanPercent >= 80
+                                                                                    ? "bg-warning"
+                                                                                    : "bg-success")"
+                             role="progressbar"
+                             style="width:@barPercent.ToString(
+                                                             "0.##",
+                                                             System.Globalization.CultureInfo.InvariantCulture)%">
+                        </div>
+
+                    </div>
+
+
+                    <div class="border-top mt-4 pt-3">
+
+                        <div class="d-flex justify-content-between mb-2">
+
+                            <span class="text-muted">
+                                Tổng kế hoạch
+                            </span>
+
+                            <strong>
+                                @Model.SpendingPlanLimit.ToString("N0") ₫
+                            </strong>
+
+                        </div>
+
+
+                        <div class="d-flex justify-content-between mb-2">
+
+                            <span class="text-muted">
+                                Chi thực tế
+                            </span>
+
+                            <strong class="text-danger">
+                                @Model.SpendingPlanUsed.ToString("N0") ₫
+                            </strong>
+
+                        </div>
+
+
+                        <div class="d-flex justify-content-between">
+
+                            @if (Model.SpendingPlanRemaining >= 0)
+                            {
+                                <span class="text-muted">
+                                    Còn kế hoạch
+                                </span>
+
+                                <strong class="text-success">
+                                    +@Model.SpendingPlanRemaining.ToString("N0") ₫
+                                </strong>
+                            }
+                            else
+                            {
+                                <span class="text-muted">
+                                    Vượt kế hoạch
+                                </span>
+
+                                <strong class="text-danger">
+                                    -@Math.Abs(Model.SpendingPlanRemaining).ToString("N0") ₫
+                                </strong>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                @if (actualSpendingPlanPercent >= 100)
+                {
+                    <div class="alert alert-danger mb-0">
+
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+
+                        Bạn đã vượt kế hoạch chi tiêu
+                        <strong>
+                            @Math.Abs(Model.SpendingPlanRemaining).ToString("N0") ₫
+                        </strong>.
+
+                    </div>
+                }
+                else if (actualSpendingPlanPercent >= 80)
+                {
+                    <div class="alert alert-warning mb-0">
+
+                        <i class="fa-solid fa-circle-exclamation me-2"></i>
+
+                        Bạn đã sử dụng
+                        <strong>
+                            @actualSpendingPlanPercent.ToString("N1")%
+                        </strong>
+                        kế hoạch chi tiêu.
+
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success mb-0">
+
+                        <i class="fa-solid fa-circle-check me-2"></i>
+
+                        Chi tiêu hiện vẫn nằm trong kế hoạch.
+
+                    </div>
+                }
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <script>
+
+        const monthLabels =
+            @Html.Raw(JsonSerializer.Serialize(Model.MonthLabels));
+
+        const monthlyIncome =
+            @Html.Raw(JsonSerializer.Serialize(Model.MonthlyIncome));
+
+        const monthlyExpense =
+            @Html.Raw(JsonSerializer.Serialize(Model.MonthlyExpense));
+
+
+        new Chart(
+            document.getElementById("monthlyChart"),
+            {
+                type: "bar",
+
+                data: {
+                    labels: monthLabels,
+
+                    datasets: [
+                        {
+                            label: "Thu nhập",
+                            data: monthlyIncome
+                        },
+                        {
+                            label: "Chi tiêu",
+                            data: monthlyExpense
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        );
+
+
+        const categoryCanvas =
+            document.getElementById("categoryChart");
+
+
+        if (categoryCanvas) {
+
+            const categoryLabels =
+                @Html.Raw(JsonSerializer.Serialize(Model.CategoryLabels));
+
+            const categoryValues =
+                @Html.Raw(JsonSerializer.Serialize(Model.CategoryExpenseValues));
+
+
+            new Chart(
+                categoryCanvas,
+                {
+                    type: "doughnut",
+
+                    data: {
+                        labels: categoryLabels,
+
+                        datasets: [
+                            {
+                                data: categoryValues,
+
+                                backgroundColor: [
+                                    "#4f46e5",
+                                    "#16a34a",
+                                    "#ea580c",
+                                    "#dc2626",
+                                    "#0891b2",
+                                    "#9333ea",
+                                    "#ca8a04",
+                                    "#475569",
+                                    "#db2777"
+                                ]
+                            }
+                        ]
+                    },
+
+                    plugins: [ChartDataLabels],
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        plugins: {
+
+                            legend: {
+
+                                position: "top",
+
+                                labels: {
+
+                                    generateLabels: function (chart) {
+
+                                        const data =
+                                            chart.data.datasets[0].data;
+
+                                        const total =
+                                            data.reduce(
+                                                function (sum, value) {
+                                                    return sum + Number(value);
+                                                },
+                                                0
+                                            );
+
+
+                                        return chart.data.labels.map(
+                                            function (label, index) {
+
+                                                const value =
+                                                    Number(data[index]);
+
+                                                const percent =
+                                                    total > 0
+                                                        ? (value / total * 100).toFixed(1)
+                                                        : "0.0";
+
+                                                const style =
+                                                    chart.getDatasetMeta(0)
+                                                        .controller
+                                                        .getStyle(index);
+
+
+                                                return {
+                                                    text:
+                                                        label +
+                                                        " - " +
+                                                        percent +
+                                                        "%",
+
+                                                    fillStyle:
+                                                        style.backgroundColor,
+
+                                                    strokeStyle:
+                                                        style.borderColor,
+
+                                                    lineWidth:
+                                                        style.borderWidth,
+
+                                                    hidden:
+                                                        false,
+
+                                                    index:
+                                                        index
+                                                };
+                                            }
+                                        );
+                                    }
+                                }
+                            },
+
+
+                            tooltip: {
+
+                                callbacks: {
+
+                                    label: function (context) {
+
+                                        const data =
+                                            context.dataset.data;
+
+                                        const total =
+                                            data.reduce(
+                                                function (sum, value) {
+                                                    return sum + Number(value);
+                                                },
+                                                0
+                                            );
+
+                                        const value =
+                                            Number(context.raw);
+
+                                        const percent =
+                                            total > 0
+                                                ? (value / total * 100).toFixed(1)
+                                                : "0.0";
+
+
+                                        return context.label
+                                            + ": "
+                                            + value.toLocaleString("vi-VN")
+                                            + " ₫ ("
+                                            + percent
+                                            + "%)";
+                                    }
+                                }
+                            },
+
+
+                            datalabels: {
+
+                                color: "#ffffff",
+
+                                font: {
+                                    weight: "bold",
+                                    size: 14
+                                },
+
+                                formatter: function (value, context) {
+
+                                    const data =
+                                        context.chart.data.datasets[0].data;
+
+                                    const total =
+                                        data.reduce(
+                                            function (sum, item) {
+                                                return sum + Number(item);
+                                            },
+                                            0
+                                        );
+
+                                    const percent =
+                                        total > 0
+                                            ? Number(value) / total * 100
+                                            : 0;
+
+
+                                    if (percent < 5) {
+                                        return "";
+                                    }
+
+
+                                    return percent.toFixed(1) + "%";
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+    </script>
+}
+
+
+<style>
+
+    .spending-analysis-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .analysis-main-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .analysis-badge {
+        background: #f3e8ff;
+        color: #7c3aed;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .analysis-stat {
+        height: 100%;
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 15px;
+        padding: 16px;
+    }
+
+    .analysis-stat-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+        margin-bottom: 12px;
+    }
+
+    .analysis-stat-label {
+        color: #64748b;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .analysis-stat-value {
+        color: #0f172a;
+        font-size: 19px;
+        font-weight: 700;
+    }
+
+    .analysis-category-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .analysis-stat-note {
+        color: #94a3b8;
+        font-size: 11px;
+        margin-top: 4px;
+        min-height: 17px;
+    }
+
+    .analysis-insights {
+        border-top: 1px solid #f1f5f9;
+        padding-top: 18px;
+    }
+
+    .analysis-insights-title {
+        font-weight: 700;
+        margin-bottom: 13px;
+        color: #334155;
+    }
+
+    .analysis-insight-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 10px 0;
+        color: #475569;
+        font-size: 13px;
+    }
+
+    .analysis-insight-number {
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        border-radius: 8px;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .analysis-spendingPlan {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 15px;
+    }
+
+    .analysis-empty {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 15px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .analysis-empty-icon {
+        width: 45px;
+        height: 45px;
+        min-width: 45px;
+        border-radius: 13px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+
+    .savings-dashboard-card {
+        overflow: hidden;
+    }
+
+    .savings-dashboard-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .savings-dashboard-icon {
+        width: 45px;
+        height: 45px;
+        min-width: 45px;
+        border-radius: 13px;
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .savings-dashboard-money strong {
+        font-size: 24px;
+        color: #0f172a;
+    }
+
+    .savings-dashboard-money span {
+        color: #94a3b8;
+        font-size: 14px;
+    }
+
+    .savings-dashboard-progress {
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+        .savings-dashboard-progress .progress-bar {
+            border-radius: 999px;
+        }
+
+    .savings-dashboard-action {
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 16px;
+    }
+
+    .savings-empty-dashboard {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 15px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+
+    .savings-goal-dropdown {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 20px;
+    }
+
+    .savings-goal-scroll {
+        max-height: 390px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+        .savings-goal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .savings-goal-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .savings-goal-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+
+    .savings-mini-goal {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+        .savings-mini-goal:last-child {
+            margin-bottom: 0;
+        }
+
+    .savings-mini-name {
+        font-size: 15px;
+        color: #0f172a;
+    }
+
+    .savings-mini-progress {
+        height: 7px;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+        .savings-mini-progress .progress-bar {
+            border-radius: 999px;
+        }
+
+
+    /* CARD MỚI */
+
+    .savings-summary-icon {
+        background: #ecfdf5;
+        color: #16a34a;
+    }
+
+    .remaining-icon {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+
+    @@media (max-width: 767px) {
+
+        .savings-empty-dashboard {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+            .savings-empty-dashboard .btn {
+                width: 100%;
+            }
+
+        .dashboard-header {
+            align-items: flex-start !important;
+            gap: 15px;
+            flex-direction: column;
+        }
+    }
+
+</style>

@@ -1,0 +1,53 @@
+﻿@model MoneyTracker.Models.Category
+
+@{
+    ViewData["Title"] = "Xóa danh mục";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+
+        <div class="card border-0 shadow-sm mt-5">
+
+            <div class="card-body p-5 text-center">
+
+                <i class="fa-solid fa-triangle-exclamation
+                    text-danger
+                    display-4
+                    mb-3">
+                </i>
+
+                <h3 class="fw-bold">
+                    Xóa danh mục?
+                </h3>
+
+                <p class="text-muted">
+                    Bạn có chắc muốn xóa
+                    <strong>@Model.Name</strong>?
+                </p>
+
+                <form asp-action="DeleteConfirmed"
+                      method="post">
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.Id" />
+
+                    <a asp-action="Index"
+                       class="btn btn-light px-4">
+                        Hủy
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-danger px-4">
+                        Xóa
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>

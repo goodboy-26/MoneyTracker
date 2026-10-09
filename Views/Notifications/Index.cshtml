@@ -1,0 +1,187 @@
+﻿@model IEnumerable<MoneyTracker.Models.Notification>
+
+@{
+    ViewData["Title"] = "Thông báo";
+
+    var unreadCount = Model.Count(n => !n.IsRead);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+        <h2 class="fw-bold mb-1">
+            Thông báo
+        </h2>
+
+        <p class="text-muted mb-0">
+            Bạn có @unreadCount thông báo chưa đọc.
+        </p>
+    </div>
+
+    @if (unreadCount > 0)
+    {
+        <form asp-action="MarkAllAsRead"
+              method="post">
+
+            <button type="submit"
+                    class="btn btn-outline-primary">
+
+                <i class="fa-solid fa-check-double me-2"></i>
+                Đánh dấu tất cả đã đọc
+
+            </button>
+
+        </form>
+    }
+
+</div>
+
+
+@if (!Model.Any())
+{
+    <div class="dashboard-card">
+
+        <div class="empty-dashboard-state">
+
+            <i class="fa-regular fa-bell"></i>
+
+            <h5>Chưa có thông báo</h5>
+
+            <p class="text-muted mb-0">
+                Các cảnh báo ngân sách sẽ xuất hiện tại đây.
+            </p>
+
+        </div>
+
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column gap-3">
+
+        @foreach (var item in Model)
+        {
+            var borderClass =
+                item.Type == "Danger"
+                    ? "border-danger"
+                    : item.Type == "Warning"
+                        ? "border-warning"
+                        : "border-primary";
+
+            var iconClass =
+                item.Type == "Danger"
+                    ? "fa-triangle-exclamation text-danger"
+                    : item.Type == "Warning"
+                        ? "fa-circle-exclamation text-warning"
+                        : "fa-circle-info text-primary";
+
+            <div class="card border-0 shadow-sm
+                border-start border-4 @borderClass">
+
+                <div class="card-body">
+
+                    <div class="d-flex gap-3">
+
+                        <div class="fs-4">
+
+                            <i class="fa-solid @iconClass"></i>
+
+                        </div>
+
+
+                        <div class="flex-grow-1">
+
+                            <div class="d-flex
+                                justify-content-between
+                                gap-3">
+
+                                <div>
+
+                                    <p class="mb-1
+                                        @(item.IsRead ? "text-muted" : "fw-semibold")">
+
+                                        @item.Content
+
+                                    </p>
+
+                                    <small class="text-muted">
+
+                                        <i class="fa-regular fa-clock me-1"></i>
+
+                                        @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+
+                                    </small>
+
+                                </div>
+
+
+                                @if (!item.IsRead)
+                                {
+                                    <span class="badge
+                                        bg-primary
+                                        align-self-start">
+
+                                        Mới
+
+                                    </span>
+                                }
+
+                            </div>
+
+
+                            <div class="d-flex gap-2 mt-3">
+
+                                @if (!item.IsRead)
+                                {
+                                    <form asp-action="MarkAsRead"
+                                          method="post">
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@item.Id" />
+
+                                        <button type="submit"
+                                                class="btn
+                                            btn-sm
+                                            btn-outline-primary">
+
+                                            Đã đọc
+
+                                        </button>
+
+                                    </form>
+                                }
+
+
+                                <form asp-action="Delete"
+                                      method="post">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@item.Id" />
+
+                                    <button type="submit"
+                                            class="btn
+                                        btn-sm
+                                        btn-outline-danger">
+
+                                        <i class="fa-solid fa-trash me-1"></i>
+                                        Xóa
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}

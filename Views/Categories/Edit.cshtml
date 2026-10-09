@@ -1,0 +1,86 @@
+﻿@model MoneyTracker.ViewModels.CategoryViewModel
+
+@{
+    ViewData["Title"] = "Thêm danh mục";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+
+                <h3 class="fw-bold mb-4">
+                    Sửa danh mục
+                </h3>
+
+                <form asp-action="Edit" method="post">
+
+                    <input asp-for="Id" type="hidden" />
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="text-danger mb-3">
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label asp-for="Name"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="Name"
+                               class="form-control"
+                               placeholder="Ví dụ: Tiền trọ" />
+
+                        <span asp-validation-for="Name"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <div class="mb-4">
+
+                        <label asp-for="Type"
+                               class="form-label">
+                        </label>
+
+                        <select asp-for="Type"
+                                class="form-select">
+
+                            <option value="Expense">
+                                Chi tiêu
+                            </option>
+
+                            <option value="Income">
+                                Thu nhập
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+
+                        <a asp-action="Index"
+                           class="btn btn-light">
+                            Hủy
+                        </a>
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Lưu thay đổi
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,333 @@
+﻿@model MoneyTracker.ViewModels.TransactionViewModel
+
+@{
+    ViewData["Title"] = "Thêm giao dịch";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-9">
+
+        <div class="mb-4">
+
+            <a asp-action="Index"
+               class="text-decoration-none text-muted">
+
+                <i class="fa-solid fa-arrow-left me-2"></i>
+                Quay lại danh sách
+
+            </a>
+
+        </div>
+
+
+        <div class="card border-0 shadow-sm">
+
+            <div class="card-body p-4 p-md-5">
+
+                <div class="mb-4">
+
+                    <h2 class="fw-bold mb-1">
+                        Thêm giao dịch
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Ghi lại khoản thu hoặc chi mới.
+                    </p>
+
+                </div>
+
+
+                <form asp-action="Create"
+                      method="post">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger">
+                    </div>
+
+
+                    <!-- LOẠI GIAO DỊCH -->
+
+                    <div class="mb-4">
+
+                        <label class="form-label fw-semibold">
+                            Loại giao dịch
+                        </label>
+
+                        <div class="transaction-type-wrapper">
+
+                            <input type="radio"
+                                   asp-for="Type"
+                                   value="Expense"
+                                   id="typeExpense"
+                                   class="btn-check"
+                                   checked />
+
+                            <label class="btn transaction-type-btn expense-btn"
+                                   for="typeExpense">
+
+                                <i class="fa-solid fa-arrow-down me-2"></i>
+                                Chi tiêu
+
+                            </label>
+
+
+                            <input type="radio"
+                                   asp-for="Type"
+                                   value="Income"
+                                   id="typeIncome"
+                                   class="btn-check" />
+
+                            <label class="btn transaction-type-btn income-btn"
+                                   for="typeIncome">
+
+                                <i class="fa-solid fa-arrow-up me-2"></i>
+                                Thu nhập
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- TÊN -->
+
+                    <div class="mb-3">
+
+                        <label asp-for="Title"
+                               class="form-label fw-semibold">
+                        </label>
+
+                        <input asp-for="Title"
+                               class="form-control form-control-lg"
+                               placeholder="Ví dụ: Ăn trưa, nhận lương..." />
+
+                        <span asp-validation-for="Title"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <!-- SỐ TIỀN -->
+
+                    <div class="mb-3">
+
+                        <label asp-for="Amount"
+                               class="form-label fw-semibold">
+                        </label>
+
+                        <div class="input-group input-group-lg">
+
+                            <input asp-for="Amount"
+                                   class="form-control"
+                                   min="1"
+                                   placeholder="0" />
+
+                            <span class="input-group-text">
+                                ₫
+                            </span>
+
+                        </div>
+
+                        <span asp-validation-for="Amount"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <div class="row">
+
+
+                        <!-- DANH MỤC -->
+
+                        <div class="col-md-6 mb-3">
+
+                            <label asp-for="CategoryId"
+                                   class="form-label fw-semibold">
+                            </label>
+
+                            <select asp-for="CategoryId"
+                                    id="categorySelect"
+                                    class="form-select form-select-lg">
+
+                                <option value="">
+                                    -- Chọn danh mục --
+                                </option>
+
+                                @foreach (var category in ViewBag.Categories)
+                                {
+                                    <option value="@category.Id"
+                                            data-type="@category.Type">
+
+                                        @category.Name
+
+                                    </option>
+                                }
+
+                            </select>
+
+                            <span asp-validation-for="CategoryId"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <!-- NGÀY -->
+
+                        <div class="col-md-6 mb-3">
+
+                            <label asp-for="TransactionDate"
+                                   class="form-label fw-semibold">
+                            </label>
+
+                            <input asp-for="TransactionDate"
+                                   type="datetime-local"
+                                   class="form-control form-control-lg" />
+
+                            <span asp-validation-for="TransactionDate"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- GHI CHÚ -->
+
+                    <div class="mb-4">
+
+                        <label asp-for="Note"
+                               class="form-label fw-semibold">
+                        </label>
+
+                        <textarea asp-for="Note"
+                                  class="form-control"
+                                  rows="4"
+                                  placeholder="Ghi chú thêm nếu cần...">
+                        </textarea>
+
+                        <span asp-validation-for="Note"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+
+                    <div class="d-flex justify-content-end gap-2">
+
+                        <a asp-action="Index"
+                           class="btn btn-light px-4">
+
+                            Hủy
+
+                        </a>
+
+                        <button type="submit"
+                                class="btn btn-primary px-4">
+
+                            <i class="fa-solid fa-floppy-disk me-2"></i>
+                            Lưu giao dịch
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const expenseRadio =
+                document.getElementById("typeExpense");
+
+            const incomeRadio =
+                document.getElementById("typeIncome");
+
+            const categorySelect =
+                document.getElementById("categorySelect");
+
+
+            function filterCategories() {
+
+                const selectedType =
+                    incomeRadio.checked
+                        ? "Income"
+                        : "Expense";
+
+
+                const options =
+                    categorySelect.querySelectorAll(
+                        "option[data-type]"
+                    );
+
+
+                let currentIsVisible = false;
+
+
+                options.forEach(function(option) {
+
+                    const categoryType =
+                        option.getAttribute("data-type");
+
+
+                    if (categoryType === selectedType) {
+
+                        option.hidden = false;
+
+                        if (option.selected) {
+                            currentIsVisible = true;
+                        }
+
+                    }
+                    else {
+
+                        option.hidden = true;
+
+                    }
+
+                });
+
+
+                if (!currentIsVisible) {
+                    categorySelect.value = "";
+                }
+
+            }
+
+
+            expenseRadio.addEventListener(
+                "change",
+                filterCategories
+            );
+
+
+            incomeRadio.addEventListener(
+                "change",
+                filterCategories
+            );
+
+
+            filterCategories();
+
+        });
+
+    </script>
+
+}

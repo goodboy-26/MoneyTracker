@@ -1,0 +1,421 @@
+﻿@model IEnumerable<MoneyTracker.Models.SavingsGoal>
+
+@{
+    ViewData["Title"] = "Mục tiêu tiết kiệm";
+
+    var totalTarget = Model.Sum(x => x.TargetAmount);
+    var totalSaved = Model.Sum(x => x.CurrentAmount);
+    var completedCount = Model.Count(x => x.CurrentAmount >= x.TargetAmount);
+}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Mục tiêu tiết kiệm</h2>
+        <p class="text-muted mb-0">
+            Lập kế hoạch và theo dõi những mục tiêu tài chính của bạn.
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn btn-primary px-4">
+        <i class="fa-solid fa-plus me-2"></i>
+        Tạo mục tiêu
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fa-solid fa-circle-check me-2"></i>
+        @TempData["Success"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+        <div class="goal-summary">
+            <div class="goal-summary-icon bg-primary-subtle text-primary">
+                <i class="fa-solid fa-bullseye"></i>
+            </div>
+
+            <div>
+                <span>Tổng mục tiêu</span>
+                <strong>@Model.Count()</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="goal-summary">
+            <div class="goal-summary-icon bg-success-subtle text-success">
+                <i class="fa-solid fa-piggy-bank"></i>
+            </div>
+
+            <div>
+                <span>Đã tiết kiệm</span>
+                <strong>@totalSaved.ToString("N0") ₫</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="goal-summary">
+            <div class="goal-summary-icon bg-warning-subtle text-warning">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <div>
+                <span>Đã hoàn thành</span>
+                <strong>@completedCount / @Model.Count()</strong>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@if (!Model.Any())
+{
+    <div class="goal-empty">
+
+        <div class="goal-empty-icon">
+            <i class="fa-solid fa-piggy-bank"></i>
+        </div>
+
+        <h4 class="fw-bold">
+            Chưa có mục tiêu tiết kiệm
+        </h4>
+
+        <p class="text-muted">
+            Hãy tạo mục tiêu đầu tiên, chẳng hạn mua laptop,
+            đi du lịch hoặc lập quỹ dự phòng.
+        </p>
+
+        <a asp-action="Create"
+           class="btn btn-primary">
+            <i class="fa-solid fa-plus me-2"></i>
+            Tạo mục tiêu đầu tiên
+        </a>
+
+    </div>
+}
+else
+{
+    <div class="row g-4">
+
+        @foreach (var goal in Model)
+        {
+            var percent =
+                goal.TargetAmount > 0
+                    ? Math.Min(
+                        goal.CurrentAmount * 100 / goal.TargetAmount,
+                        100)
+                    : 0;
+
+            var remaining =
+                Math.Max(
+                    goal.TargetAmount - goal.CurrentAmount,
+                    0);
+
+            var completed =
+                goal.CurrentAmount >= goal.TargetAmount;
+
+            var expired =
+                goal.TargetDate.HasValue &&
+                goal.TargetDate.Value.Date < DateTime.Today &&
+                !completed;
+
+            <div class="col-md-6 col-xl-4">
+
+                <div class="goal-card">
+
+                    <div class="d-flex justify-content-between
+                                align-items-start gap-3 mb-3">
+
+                        <div class="goal-main-icon">
+                            @if (completed)
+                            {
+                                <i class="fa-solid fa-trophy"></i>
+                            }
+                            else
+                            {
+                                <i class="fa-solid fa-bullseye"></i>
+                            }
+                        </div>
+
+                        @if (completed)
+                        {
+                            <span class="badge rounded-pill
+                                         text-bg-success px-3 py-2">
+                                <i class="fa-solid fa-check me-1"></i>
+                                Hoàn thành
+                            </span>
+                        }
+                        else if (expired)
+                        {
+                            <span class="badge rounded-pill
+                                         text-bg-danger px-3 py-2">
+                                Quá hạn
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge rounded-pill
+                                         bg-primary-subtle
+                                         text-primary px-3 py-2">
+                                Đang thực hiện
+                            </span>
+                        }
+
+                    </div>
+
+                    <h5 class="fw-bold mb-1">
+                        @goal.Name
+                    </h5>
+
+                    @if (!string.IsNullOrWhiteSpace(goal.Description))
+                    {
+                        <p class="text-muted small goal-description">
+                            @goal.Description
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-muted small goal-description">
+                            Mục tiêu tiết kiệm cá nhân
+                        </p>
+                    }
+
+                    <div class="goal-money mb-2">
+
+                        <strong>
+                            @goal.CurrentAmount.ToString("N0") ₫
+                        </strong>
+
+                        <span>
+                            / @goal.TargetAmount.ToString("N0") ₫
+                        </span>
+
+                    </div>
+
+                    <div class="progress goal-progress mb-2">
+
+                        <div class="progress-bar @(completed ? "bg-success" : "")"
+                             role="progressbar"
+                             style="width: @percent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                        </div>
+
+                    </div>
+
+                    <div class="d-flex justify-content-between
+                                small mb-4">
+
+                        <span class="fw-semibold">
+                            @percent.ToString("0.#")%
+                        </span>
+
+                        @if (!completed)
+                        {
+                            <span class="text-muted">
+                                Còn @remaining.ToString("N0") ₫
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-success fw-semibold">
+                                Đã đạt mục tiêu
+                            </span>
+                        }
+
+                    </div>
+
+                    <div class="goal-meta">
+
+                        <div>
+                            <i class="fa-regular fa-calendar me-2"></i>
+
+                            @if (goal.TargetDate.HasValue)
+                            {
+                                <span>
+                                    Hạn:
+                                    @goal.TargetDate.Value.ToString("dd/MM/yyyy")
+                                </span>
+                            }
+                            else
+                            {
+                                <span>Không có thời hạn</span>
+                            }
+                        </div>
+
+                    </div>
+
+                    <div class="goal-actions mt-4">
+
+                        @if (!completed)
+                        {
+                            <a asp-action="AddAmount"
+                               asp-route-id="@goal.Id"
+                               class="btn btn-primary flex-grow-1">
+
+                                <i class="fa-solid fa-plus me-1"></i>
+                                Thêm tiền
+
+                            </a>
+                        }
+
+                        <a asp-action="Edit"
+                           asp-route-id="@goal.Id"
+                           class="btn btn-outline-secondary">
+
+                            <i class="fa-solid fa-pen"></i>
+
+                        </a>
+
+                        <form asp-action="Delete"
+                              asp-route-id="@goal.Id"
+                              method="post"
+                              onsubmit="return confirm('Bạn chắc chắn muốn xóa mục tiêu này?');">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="btn btn-outline-danger">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}
+
+<style>
+
+    .goal-summary {
+        background: #fff;
+        border: 1px solid #edf0f4;
+        border-radius: 16px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 100%;
+        box-shadow: 0 5px 20px rgba(15,23,42,.04);
+    }
+
+    .goal-summary-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+        flex-shrink: 0;
+    }
+
+    .goal-summary span {
+        display: block;
+        color: #64748b;
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+
+    .goal-summary strong {
+        display: block;
+        font-size: 20px;
+        color: #0f172a;
+    }
+
+    .goal-card {
+        background: #fff;
+        border: 1px solid #edf0f4;
+        border-radius: 18px;
+        padding: 21px;
+        height: 100%;
+        box-shadow: 0 5px 20px rgba(15,23,42,.04);
+        transition: .2s ease;
+    }
+
+    .goal-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(15,23,42,.08);
+    }
+
+    .goal-main-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 13px;
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .goal-description {
+        min-height: 38px;
+        margin-top: 5px;
+    }
+
+    .goal-money strong {
+        font-size: 20px;
+        color: #0f172a;
+    }
+
+    .goal-money span {
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    .goal-progress {
+        height: 9px;
+        border-radius: 20px;
+    }
+
+    .goal-meta {
+        padding-top: 13px;
+        border-top: 1px solid #f1f5f9;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .goal-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .goal-empty {
+        background: #fff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 20px;
+        text-align: center;
+        padding: 65px 20px;
+    }
+
+    .goal-empty-icon {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 18px;
+        border-radius: 20px;
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 29px;
+    }
+
+</style>

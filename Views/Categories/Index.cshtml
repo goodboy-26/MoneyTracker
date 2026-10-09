@@ -1,0 +1,180 @@
+﻿@model IEnumerable<MoneyTracker.Models.Category>
+
+@{
+    ViewData["Title"] = "Danh mục";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Danh mục</h2>
+
+        <p class="text-muted mb-0">
+            Quản lý danh mục thu nhập và chi tiêu.
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn btn-primary">
+
+        <i class="fa-solid fa-plus me-2"></i>
+        Thêm danh mục
+
+    </a>
+</div>
+
+<div class="row g-4">
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold text-danger mb-3">
+                    <i class="fa-solid fa-arrow-down me-2"></i>
+                    Danh mục chi tiêu
+                </h5>
+
+                @foreach (var item in Model.Where(c => c.Type == "Expense"))
+                {
+                    <div class="d-flex
+                        justify-content-between
+                        align-items-center
+                        border-bottom
+                        py-3">
+
+                        <div>
+                            <strong>@item.Name</strong>
+
+                            <div class="small text-muted">
+                                @(item.IsDefault
+                                    ? "Danh mục hệ thống"
+                                    : "Danh mục cá nhân")
+                            </div>
+                        </div>
+
+                        <div>
+                            @if (!item.IsDefault)
+                            {
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-primary">
+
+                                    <i class="fa-solid fa-pen"></i>
+
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-danger">
+
+                                    <i class="fa-solid fa-trash"></i>
+
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary">
+                                    Hệ thống
+                                </span>
+                            }
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold text-success mb-3">
+                    <i class="fa-solid fa-arrow-up me-2"></i>
+                    Danh mục thu nhập
+                </h5>
+
+                @foreach (var item in Model.Where(c => c.Type == "Income"))
+                {
+                    <div class="d-flex
+                        justify-content-between
+                        align-items-center
+                        border-bottom
+                        py-3">
+
+                        <div>
+                            <strong>@item.Name</strong>
+
+                            <div class="small text-muted">
+                                @(item.IsDefault
+                                    ? "Danh mục hệ thống"
+                                    : "Danh mục cá nhân")
+                            </div>
+                        </div>
+
+                        <div>
+                            @if (!item.IsDefault)
+                            {
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-primary">
+
+                                    <i class="fa-solid fa-pen"></i>
+
+                                </a>
+
+                                <a asp-action="Delete"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-danger">
+
+                                    <i class="fa-solid fa-trash"></i>
+
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary">
+                                    Hệ thống
+                                </span>
+                            }
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        </div>
+
+    </div>
+
+</div>

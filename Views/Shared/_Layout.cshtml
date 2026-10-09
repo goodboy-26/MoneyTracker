@@ -1,0 +1,475 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using MoneyTracker.Data
+@using MoneyTracker.Models
+
+@inject UserManager<AppUser> UserManager
+@inject AppDbContext DbContext
+
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    var unreadNotificationCount = 0;
+
+    if (currentUser != null)
+    {
+        unreadNotificationCount = await DbContext.Notifications
+            .CountAsync(n =>
+                n.UserId == currentUser.Id &&
+                !n.IsRead);
+    }
+
+    var isAdmin =
+        User.Identity?.IsAuthenticated == true &&
+        User.IsInRole("Admin");
+
+    var currentController =
+    ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+    var currentAction =
+        ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    string ActiveMenu(string controller, string? action = null)
+    {
+        var controllerMatch =
+            currentController.Equals(
+                controller,
+                StringComparison.OrdinalIgnoreCase);
+
+        if (!controllerMatch)
+        {
+            return "";
+        }
+
+        if (string.IsNullOrWhiteSpace(action))
+        {
+            return "active";
+        }
+
+        var actionMatch =
+            currentAction.Equals(
+                action,
+                StringComparison.OrdinalIgnoreCase);
+
+        return actionMatch
+            ? "active"
+            : "";
+    }
+}
+
+<!DOCTYPE html>
+
+<html lang="vi">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        @ViewData["Title"] - MoneyTracker
+    </title>
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/MoneyTracker.styles.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+
+</head>
+
+
+<body>
+
+<div class="app-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+
+            <div class="sidebar-brand-icon">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+
+            <div>
+                <div class="sidebar-brand-title">
+                    MoneyTracker
+                </div>
+
+                <div class="sidebar-brand-subtitle">
+                    Quản lý chi tiêu
+                </div>
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-menu">
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @if (!isAdmin)
+                {
+                    <div class="sidebar-section-title">
+                        Tổng quan
+                    </div>
+
+                    <a asp-controller="Home"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Home")">
+
+                        <i class="fa-solid fa-house"></i>
+                        <span>Trang chủ</span>
+
+                    </a>
+
+
+                    <div class="sidebar-section-title">
+                        Quản lý tài chính
+                    </div>
+
+                    <a asp-controller="Transactions"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Transactions")">
+
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                        <span>Giao dịch</span>
+
+                    </a>
+
+
+                    <a asp-controller="Categories"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Categories")">
+
+                        <i class="fa-solid fa-tags"></i>
+                        <span>Danh mục</span>
+
+                    </a>
+
+
+                    <a asp-controller="SpendingPlans"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("SpendingPlans")">
+
+                        <i class="fa-solid fa-bullseye"></i>
+                        <span>Kế hoạch chi tiêu</span>
+
+                    </a>
+
+                    <a asp-controller="SavingsGoals"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("SavingsGoals")">
+
+                        <i class="fa-solid fa-piggy-bank"></i>
+
+                        <span>
+                            Mục tiêu tiết kiệm
+                        </span>
+
+                    </a>
+
+
+                    <a asp-controller="Reports"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Reports")">
+
+                        <i class="fa-solid fa-chart-column"></i>
+                        <span>Báo cáo</span>
+
+                    </a>
+
+
+                    <a asp-controller="Notifications"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Notifications")">
+
+                        <i class="fa-solid fa-bell"></i>
+
+                        <span>
+                            Thông báo
+                        </span>
+
+                        @if (unreadNotificationCount > 0)
+                        {
+                            <span class="sidebar-badge">
+                                @unreadNotificationCount
+                            </span>
+                        }
+
+                    </a>
+
+
+                    <div class="sidebar-section-title">
+                        Tài khoản
+                    </div>
+
+                    <a asp-controller="Profile"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Profile")">
+
+                        <i class="fa-solid fa-user"></i>
+                        <span>Hồ sơ</span>
+
+                    </a>
+                }
+                else
+                {
+                    <div class="sidebar-section-title">
+                        Quản trị
+                    </div>
+
+                    <a asp-controller="Admin"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Admin", "Index")">
+
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Trang chủ Admin<span>
+
+                    </a>
+
+
+                    <a asp-controller="Admin"
+                       asp-action="Users"
+                       class="sidebar-link @ActiveMenu("Admin", "Users")">
+
+                        <i class="fa-solid fa-users"></i>
+                        <span>Người dùng</span>
+
+                    </a>
+
+
+                    <a asp-controller="AdminCategories"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("AdminCategories")">
+
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Danh mục hệ thống</span>
+
+                    </a>
+
+
+                    <div class="sidebar-section-title">
+                        Tài khoản
+                    </div>
+
+                    <a asp-controller="Profile"
+                       asp-action="Index"
+                       class="sidebar-link @ActiveMenu("Profile")">
+
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span>Hồ sơ Admin</span>
+
+                    </a>
+                }
+            }
+
+        </nav>
+
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="sidebar-footer">
+
+                <form asp-controller="Account"
+                      asp-action="Logout"
+                      method="post">
+
+                    <button type="submit"
+                            class="sidebar-logout">
+
+                        <i class="fa-solid fa-right-from-bracket"></i>
+
+                        <span>
+                            Đăng xuất
+                        </span>
+
+                    </button>
+
+                </form>
+
+            </div>
+        }
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button class="mobile-menu-button"
+                        type="button"
+                        id="mobileMenuButton">
+
+                    <i class="fa-solid fa-bars"></i>
+
+                </button>
+
+                <div>
+
+                    <h5 class="topbar-title mb-0">
+                        @ViewData["Title"]
+                    </h5>
+
+                    <small class="text-muted">
+                        MoneyTracker
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    @if (!isAdmin)
+                    {
+                        <a asp-controller="Notifications"
+                           asp-action="Index"
+                           class="notification-button">
+
+                            <i class="fa-regular fa-bell"></i>
+
+                            @if (unreadNotificationCount > 0)
+                            {
+                                <span class="notification-count">
+                                    @unreadNotificationCount
+                                </span>
+                            }
+
+                        </a>
+                    }
+
+
+                    <div class="topbar-user">
+
+                    <div class="topbar-avatar">
+
+                        @if (!string.IsNullOrWhiteSpace(currentUser?.Avatar))
+                        {
+                            <img src="@currentUser.Avatar"
+                                 alt="Avatar"
+                                 style="
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: cover;
+                                    border-radius: 50%;" />
+                        }
+                        else if (!string.IsNullOrWhiteSpace(currentUser?.FullName))
+                        {
+                            @currentUser.FullName.Substring(0, 1).ToUpper()
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-user"></i>
+                        }
+
+                    </div>
+
+                        <div class="topbar-user-info">
+
+                            <strong>
+                                @(currentUser?.FullName ?? User.Identity?.Name)
+                            </strong>
+
+                            <span>
+                                @(isAdmin ? "Admin" : "Người dùng")
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <form asp-controller="Account"
+                          asp-action="Logout"
+                          method="post"
+                          class="topbar-logout-form">
+
+                        <button type="submit"
+                                class="topbar-logout-btn"
+                                title="Đăng xuất">
+
+                            <i class="fa-solid fa-right-from-bracket"></i>
+
+                        </button>
+
+                    </form>
+                }
+
+            </div>
+
+        </header>
+
+
+        <!-- CONTENT -->
+        <main class="main-content">
+
+            @RenderBody()
+
+        </main>
+
+    </div>
+
+</div>
+
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="~/js/site.js"
+        asp-append-version="true"></script>
+
+
+<script>
+
+    const sidebar =
+        document.querySelector(".sidebar");
+
+    const menuButton =
+        document.getElementById("mobileMenuButton");
+
+    if (menuButton) {
+
+        menuButton.addEventListener(
+            "click",
+            function () {
+
+                sidebar.classList.toggle(
+                    "sidebar-open"
+                );
+
+            }
+        );
+
+    }
+
+</script>
+
+
+@await RenderSectionAsync(
+    "Scripts",
+    required: false)
+
+</body>
+
+</html>

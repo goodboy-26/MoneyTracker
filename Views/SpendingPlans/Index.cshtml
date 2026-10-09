@@ -1,0 +1,457 @@
+﻿@model IEnumerable<MoneyTracker.Models.SpendingPlan>
+
+@{
+    ViewData["Title"] = "Kế hoạch chi tiêu";
+
+    var monthlyIncome =
+        (decimal)(ViewBag.MonthlyIncome ?? 0m);
+
+    var totalSpendingPlan =
+        (decimal)(ViewBag.TotalSpendingPlan ?? 0m);
+
+    var monthlySavings =
+        (decimal)(ViewBag.MonthlySavings ?? 0m);
+
+    var remaining =
+        (decimal)(ViewBag.RemainingBalance ?? 0m);
+
+    var actualExpenses =
+        ViewBag.ActualExpenses
+        as Dictionary<int, decimal>
+        ?? new Dictionary<int, decimal>();
+}
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+    </div>
+}
+
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+        <h2 class="fw-bold mb-1">
+            Kế hoạch chi tiêu
+        </h2>
+
+        <p class="text-muted mb-0">
+            Đặt mức dự kiến cho từng danh mục và so sánh với chi tiêu thực tế.
+        </p>
+    </div>
+
+    <a asp-action="Create"
+       class="btn btn-primary">
+
+        <i class="fa-solid fa-plus me-2"></i>
+        Kế hoạch chi tiêu
+
+    </a>
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- BỘ LỌC -->
+<!-- ========================================= -->
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+
+        <form method="get"
+              class="row g-3">
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+                    Tháng
+                </label>
+
+                <select name="month"
+                        class="form-select">
+
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <option value="@i"
+                                selected="@(ViewBag.Month == i)">
+                            Tháng @i
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+                    Năm
+                </label>
+
+                <select name="year"
+                        class="form-select">
+
+                    @for (int y = DateTime.Now.Year - 5;
+                          y <= DateTime.Now.Year + 5;
+                          y++)
+                    {
+                        <option value="@y"
+                                selected="@(ViewBag.Year == y)">
+                            @y
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <div class="col-md-4 d-flex align-items-end">
+
+                <button type="submit"
+                        class="btn btn-dark w-100">
+
+                    <i class="fa-solid fa-filter me-2"></i>
+                    Xem
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+
+<!-- ========================================= -->
+<!-- TỔNG QUAN PHÂN BỔ -->
+<!-- ========================================= -->
+
+<div class="row g-3 mb-4">
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+
+                <div class="text-muted small mb-2">
+                    Ngân sách tháng (Tổng thu)
+                </div>
+
+                <h4 class="fw-bold text-success mb-0">
+                    @monthlyIncome.ToString("N0") ₫
+                </h4>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+
+                <div class="text-muted small mb-2">
+                    Tổng kế hoạch
+                </div>
+
+                <h4 class="fw-bold text-primary mb-0">
+                    @totalSpendingPlan.ToString("N0") ₫
+                </h4>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+
+                <div class="text-muted small mb-2">
+                    Đã tiết kiệm
+                </div>
+
+                <h4 class="fw-bold mb-0">
+                    @monthlySavings.ToString("N0") ₫
+                </h4>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+
+                <div class="text-muted small mb-2">
+                    Còn lại
+                </div>
+
+                <h4 class="fw-bold @(remaining < 0 ? "text-danger" : "text-dark") mb-0">
+                    @remaining.ToString("N0") ₫
+                </h4>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- DANH SÁCH SPENDING PLAN -->
+<!-- ========================================= -->
+
+<div class="card border-0 shadow-sm">
+
+    <div class="card-body p-0">
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+
+                <i class="fa-solid fa-wallet
+                          fa-3x
+                          text-muted
+                          mb-3">
+                </i>
+
+                <h5>
+                    Chưa có kế hoạch chi tiêu
+                </h5>
+
+                <p class="text-muted">
+                    Tạo kế hoạch cho từng danh mục để so sánh với chi tiêu thực tế.
+                </p>
+
+                <a asp-action="Create"
+                   class="btn btn-primary">
+
+                    + Kế hoạch chi tiêu
+
+                </a>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Danh mục
+                            </th>
+
+                            <th>
+                                Kế hoạch
+                            </th>
+
+                            <th>
+                                Đã chi
+                            </th>
+
+                            <th>
+                                Dư / Vượt
+                            </th>
+
+                            <th>
+                                Sử dụng
+                            </th>
+
+                            <th class="text-end">
+                                Thao tác
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            var actual =
+                                actualExpenses.TryGetValue(
+                                    item.CategoryId,
+                                    out var value)
+                                    ? value
+                                    : 0m;
+
+                            var difference =
+                                item.PlannedAmount -
+                                actual;
+
+                            var percent =
+                                item.PlannedAmount > 0
+                                    ? actual /
+                                      item.PlannedAmount *
+                                      100
+                                    : 0;
+
+                            var progress =
+                                Math.Min(
+                                    percent,
+                                    100);
+
+
+                            <tr>
+
+                                <td>
+
+                                    <strong>
+                                        @item.Category?.Name
+                                    </strong>
+
+                                    <div class="small text-muted">
+                                        Tháng @item.Month/@item.Year
+                                    </div>
+
+                                </td>
+
+
+                                <td class="fw-semibold">
+
+                                    @item.PlannedAmount.ToString("N0") ₫
+
+                                </td>
+
+
+                                <td>
+
+                                    @actual.ToString("N0") ₫
+
+                                </td>
+
+
+                                <td>
+
+                                    @if (difference > 0)
+                                    {
+                                        <span class="badge bg-success-subtle text-success">
+
+                                            Dư
+                                            @difference.ToString("N0") ₫
+
+                                        </span>
+                                    }
+                                    else if (difference < 0)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger">
+
+                                            Vượt
+                                            @Math.Abs(difference).ToString("N0") ₫
+
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary">
+
+                                            Vừa đủ
+
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <td style="min-width: 180px;">
+
+                                    <div class="d-flex justify-content-between small mb-1">
+
+                                        <span>
+                                            @percent.ToString("N1")%
+                                        </span>
+
+                                        @if (percent >= 100)
+                                        {
+                                            <span class="text-danger">
+                                                Vượt
+                                            </span>
+                                        }
+                                        else if (percent >= 80)
+                                        {
+                                            <span class="text-warning">
+                                                Sắp hết
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                Bình thường
+                                            </span>
+                                        }
+
+                                    </div>
+
+
+                                    <div class="progress"
+                                         style="height: 7px;">
+
+                                        <div class="progress-bar @(percent >= 100 ? "bg-danger" : percent >= 80 ? "bg-warning" : "bg-primary")"
+                                             role="progressbar"
+                                             style="width: @(progress)%">
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td class="text-end">
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary">
+
+                                        <i class="fa-solid fa-pen"></i>
+
+                                    </a>
+
+
+                                    <form asp-action="Delete"
+                                          asp-route-id="@item.Id"
+                                          method="post"
+                                          class="d-inline">
+
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Bạn có chắc muốn xóa kế hoạch này?')">
+
+                                            <i class="fa-solid fa-trash"></i>
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>
